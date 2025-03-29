@@ -46,7 +46,7 @@ def main():
         llm_model = st.selectbox(
             "Select LLM Model:",
             [
-                "google/gemma-3-27b-it:free",
+                "gemini-2.5-pro-exp-03-25",
                 "qwen/qwen2.5-vl-32b-instruct:free", 
                 "google/gemini-2.0-pro-exp-02-05:free",
                 "mistralai/mistral-small-3.1-24b-instruct:free",

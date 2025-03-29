@@ -6,7 +6,7 @@ import base64
 from PIL import Image, ImageDraw
 
 # Initialize API keys
-OPENROUTER_API_KEY = "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"
+GEMINI_API_KEY = "AIzaSyCNslLSywpb3HPEBZF-Qbjb7APf75wzefQ"
 PERPLEXITY_API_KEY = "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"
 
 # Currency code to name mapping
@@ -130,7 +130,7 @@ def get_news(topic):
         st.error(f"Search error: {str(e)}")
         return []
 
-def summarize_articles(articles, symbol, model="google/gemma-3-27b-it:free"):
+def summarize_articles(articles, symbol, model="gemini-2.5-pro-exp-03-25"):
     try:
         # Aggregate all article bodies into a single string
         aggregated_content = "\n\n".join(f"Title: {article.get('title', 'N/A')}\nPublished: {article.get('date', 'N/A')}\nSource: {article.get('source', 'N/A')}\nSummary: {article.get('body', 'No summary available')}" for article in articles)
@@ -169,62 +169,87 @@ def summarize_articles(articles, symbol, model="google/gemma-3-27b-it:free"):
                 st.error(f"Error processing image {filename}: {str(e)}")
                 continue
         
-        # Only combine images if we have any
-        if images:
-            # Concatenate images vertically
-            widths, heights = zip(*(i.size for i in images))
-            total_height = sum(heights)
-            max_width = max(widths)
-            
-            combined_image = Image.new('RGB', (max_width, total_height))
-            y_offset = 0
-            for img in images:
-                combined_image.paste(img, (0, y_offset))
-                y_offset += img.height
-            
-            # Save the combined image
-            combined_image.save('combined_chart.png')
-            
-            # Read and encode the combined image to base64
-            with open('combined_chart.png', 'rb') as image_file:
-                base64_image = base64.b64encode(image_file.read()).decode('utf-8')
-        else:
-            # If no images were processed, we can't perform image analysis
+        # Only process if we have images
+        if not images:
             return "Error: Could not process chart images for analysis."
         
-        response = requests.post(
-            url="https://openrouter.ai/api/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-                "HTTP-Referer": "<YOUR_SITE_URL>",  # Optional
-                "X-Title": "<YOUR_SITE_NAME>",  # Optional
-            },
-            data=json.dumps({
-                "model": model,  # Use the model parameter passed from main.py
-                "messages": [
+        # Concatenate images vertically
+        widths, heights = zip(*(i.size for i in images))
+        total_height = sum(heights)
+        max_width = max(widths)
+        
+        combined_image = Image.new('RGB', (max_width, total_height))
+        y_offset = 0
+        for img in images:
+            combined_image.paste(img, (0, y_offset))
+            y_offset += img.height
+        
+        # Save the combined image
+        combined_image.save('combined_chart.png')
+        
+        # Read and encode the combined image to base64
+        with open('combined_chart.png', 'rb') as image_file:
+            base64_image = base64.b64encode(image_file.read()).decode('utf-8')
+        
+        # Create prompt for Gemini API
+        prompt = f"""
+        Please analyze the following news articles and technical charts for {symbol}:
+        
+        NEWS ARTICLES:
+        {aggregated_content}
+        
+        CHARTS:
+        The charts show {symbol} price action at multiple timeframes (5 minute, 1 hour, and daily charts).
+        The horizontal red line indicates the current price level.
+        
+        Based on both the news and technical analysis of the charts, please provide:
+        1. A summary of key news affecting {symbol}
+        2. Technical analysis of the charts
+        3. A clear trading recommendation (buy, sell, or hold)
+        4. Potential price targets and risk levels
+        """
+        
+        # Prepare the API request for Gemini
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
+        
+        headers = {
+            "Content-Type": "application/json"
+        }
+        
+        payload = {
+            "contents": [{
+                "parts": [
+                    {"text": prompt},
                     {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": f"Summarize and analyze the following news articles and analyze the {symbol} charts for M5, H1, and D1 timeframes. Provide a decision on whether to buy or sell {symbol}: {aggregated_content}"
-                            },
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:image/png;base64,{base64_image}"
-                                }
-                            }
-                        ]
+                        "inline_data": {
+                            "mime_type": "image/png",
+                            "data": base64_image
+                        }
                     }
                 ]
-            })
-        )
-        response_data = response.json()
-        # Return the full response from the LLM instead of just extracting the summary
-        if 'choices' in response_data:
-            return response_data['choices'][0]['message']['content']
+            }]
+        }
+        
+        # Make the API request
+        response = requests.post(url, headers=headers, data=json.dumps(payload))
+        
+        if response.status_code == 200:
+            response_data = response.json()
+            
+            # Extract the generated content from Gemini's response
+            if 'candidates' in response_data and len(response_data['candidates']) > 0:
+                candidate = response_data['candidates'][0]
+                if 'content' in candidate and 'parts' in candidate['content']:
+                    parts = candidate['content']['parts']
+                    # Combine all text parts
+                    result = ''.join([part.get('text', '') for part in parts if 'text' in part])
+                    return result
+                else:
+                    return "Error: Unable to extract content from API response"
+            else:
+                return "Error: No candidates in API response"
         else:
-            return "No response available from the LLM API"
+            return f"API request failed with status code: {response.status_code}. Response: {response.text}"
+            
     except Exception as e:
         return f"Error in analysis: {str(e)}"
