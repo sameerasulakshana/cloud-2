@@ -137,9 +137,17 @@ def summarize_articles(articles, symbol, model="google/gemma-3-27b-it:free"):
         
         # Read and concatenate the images
         images = []
-        # Using the chart.py generated image files which should have the same naming convention
-        for timeframe in ['M5', 'H1', 'D1']:
-            filename = f'{symbol}_{timeframe}.png'
+        
+        # Use the correct timeframe format that matches the actual saved files
+        # Map MT5 timeframes to Chart-IMG timeframes
+        timeframe_mapping = {
+            'M5': '5m',
+            'H1': '1h',
+            'D1': '1D'
+        }
+        
+        for mt5_timeframe, chart_timeframe in timeframe_mapping.items():
+            filename = f'{symbol}_{chart_timeframe}.png'  # Use chart-img format timeframe
             try:
                 img = Image.open(filename)
                 img = img.convert('RGB')  # Ensure image is in RGB mode
