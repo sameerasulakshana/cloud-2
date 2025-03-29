@@ -6,7 +6,7 @@ import base64
 from PIL import Image, ImageDraw
 
 # Initialize API keys
-OPENROUTER_API_KEY = "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"
+OPENROUTER_API_KEY = "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"
 PERPLEXITY_API_KEY = "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"
 
 # Currency code to name mapping
