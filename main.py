@@ -1,6 +1,6 @@
 import streamlit as st
 from news import get_news, summarize_articles
-from chart import get_symbol_data, plot_symbol_data, get_chart_data
+from chart import  get_chart_data
 
 def main():
     st.set_page_config(page_title="News and Symbol Analysis", 
