@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 
 # Load environment variables
-load_dotenv()
+
 
 API_KEY = os.getenv("CHART_IMG_API_KEY", "U9PpfPfwJD7tqcBgaJXJj16Lg47gZcAB2oBiIEn1")
 
