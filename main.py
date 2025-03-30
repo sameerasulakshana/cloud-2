@@ -1,7 +1,6 @@
 import streamlit as st
-from news import get_news as get_news_perplexity, summarize_articles as summarize_articles_perplexity
-from news2 import get_news as get_news_google, summarize_articles as summarize_articles_google
-from chart import get_chart_data
+from news import get_news, summarize_articles
+from chart import  get_chart_data
 
 def main():
     st.set_page_config(page_title="News and Symbol Analysis", 
@@ -18,8 +17,6 @@ def main():
         st.session_state.articles = []
     if 'charts_generated' not in st.session_state:
         st.session_state.charts_generated = False
-    if 'news_source' not in st.session_state:
-        st.session_state.news_source = "Google"
     
     # Create two columns for the layout
     col1, col2 = st.columns([1, 1])
@@ -45,24 +42,11 @@ def main():
             st.session_state.articles = []
             st.session_state.charts_generated = False
         
-        # Add news source selection
-        news_source = st.radio(
-            "Select News Source:",
-            ["Google (with Search Grounding)", "Perplexity"],
-            index=0,
-            key="news_source_selector"
-        )
-        
-        # Update session state with selected news source
-        st.session_state.news_source = "Google" if "Google" in news_source else "Perplexity"
-        
         # Add LLM model selection with a key to ensure it's properly tracked
         llm_model = st.selectbox(
             "Select LLM Model:",
             [
                 "gemini-2.5-pro-exp-03-25",
-                "gemini-2.0-flash", 
-                "gemini-2.0-pro",
                 "qwen/qwen2.5-vl-32b-instruct:free", 
                 "google/gemini-2.0-pro-exp-02-05:free",
                 "mistralai/mistral-small-3.1-24b-instruct:free",
@@ -103,12 +87,8 @@ def main():
                 with col1:
                     # Only fetch new articles if we don't already have them for this symbol
                     if not st.session_state.articles:
-                        with st.spinner(f'Fetching news from {st.session_state.news_source}...'):
-                            # Choose the news source based on user selection
-                            if st.session_state.news_source == "Google":
-                                st.session_state.articles = get_news_google(symbol)
-                            else:
-                                st.session_state.articles = get_news_perplexity(symbol)
+                        with st.spinner('Fetching news...'):
+                            st.session_state.articles = get_news(symbol)
                     
                     articles = st.session_state.articles
                     if not articles:
@@ -123,13 +103,7 @@ def main():
                         with st.spinner(f'Analyzing news with {llm_model}...'):
                             # Explicitly pass the model from session state to ensure it's the current selection
                             selected_model = st.session_state.selected_model
-                            
-                            # Choose the summarization function based on news source
-                            if st.session_state.news_source == "Google":
-                                summary = summarize_articles_google(articles, symbol, selected_model)
-                            else:
-                                summary = summarize_articles_perplexity(articles, symbol, selected_model)
-                                
+                            summary = summarize_articles(articles, symbol, selected_model)
                             st.markdown("### AI Summary and Trading Decision")
                             st.write(summary)
                         
@@ -139,14 +113,7 @@ def main():
                                 st.write(f"**Published:** {article.get('date', 'N/A')}")
                                 st.write(f"**Source:** {article.get('source', 'N/A')}")
                                 st.write(f"**Summary:** {article.get('body', 'No summary available')}")
-                                if 'url' in article and article['url']:
-                                    st.markdown(f"[Read Full Article]({article['url']})")
-                        
-                        # Display sources when using Google search grounding
-                        if st.session_state.news_source == "Google" and hasattr(st.session_state, 'search_sources') and st.session_state.search_sources:
-                            st.markdown("### Sources")
-                            for source in st.session_state.search_sources:
-                                st.markdown(f"- [{source['title']}]({source['uri']})")
+                                st.markdown(f"[Read Full Article]({article.get('url', '#')})")
             
             except Exception as e:
                 st.error(f"An error occurred: {str(e)}")

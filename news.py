@@ -5,9 +5,9 @@ import json
 import base64
 from PIL import Image, ImageDraw
 
-# Initialize API keys from Streamlit secrets
-GEMINI_API_KEY = st.secrets["api_keys"]["GEMINI_API_KEY"]
-PERPLEXITY_API_KEY = st.secrets["api_keys"]["PERPLEXITY_API_KEY"]
+# Initialize API keys
+GEMINI_API_KEY = "AIzaSyCNslLSywpb3HPEBZF-Qbjb7APf75wzefQ"
+PERPLEXITY_API_KEY = "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"
 
 # Currency code to name mapping
 CURRENCY_MAP = {
