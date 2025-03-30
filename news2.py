@@ -6,8 +6,8 @@ import base64
 from PIL import Image, ImageDraw
 import os
 
-# Initialize API keys
-GEMINI_API_KEY = "AIzaSyCNslLSywpb3HPEBZF-Qbjb7APf75wzefQ"
+# Initialize API keys from Streamlit secrets
+GEMINI_API_KEY = st.secrets["api_keys"]["GEMINI_API_KEY"]
 
 # Currency code to name mapping
 CURRENCY_MAP = {

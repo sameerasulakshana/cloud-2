@@ -3,11 +3,8 @@ import streamlit as st
 from datetime import datetime
 import os
 
-
-# Load environment variables
-
-
-API_KEY = os.getenv("CHART_IMG_API_KEY", "U9PpfPfwJD7tqcBgaJXJj16Lg47gZcAB2oBiIEn1")
+# Get API key from Streamlit secrets
+API_KEY = st.secrets["api_keys"]["CHART_IMG_API_KEY"]
 
 def get_chart_data(symbol, timeframe, bars=100):
     """
