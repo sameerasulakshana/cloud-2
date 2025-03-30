@@ -61,10 +61,10 @@ def main():
             "Select LLM Model:",
             [
                 "gemini-2.5-pro-exp-03-25",
-                "qwen/qwen2.5-vl-32b-instruct:free", 
-                "google/gemini-2.0-pro-exp-02-05:free",
-                "mistralai/mistral-small-3.1-24b-instruct:free",
-                "meta-llama/llama-3.2-11b-vision-instruct:free"
+                "gemini-2.0-flash", 
+                "gemini-2.0-flash-lite",
+                "gemini-1.5-flash",
+                "gemini-1.5-flash-8b"
             ],
             index=0,
             key="model_selector"  # Add a key to ensure state is tracked properly
